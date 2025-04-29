@@ -23,6 +23,7 @@ public class VehicleIdentification {
 
     private LocalDate purchasedDate;
 
+    private String photoUrl;
 
     private BigDecimal price;
 
@@ -32,9 +33,10 @@ public class VehicleIdentification {
     public VehicleIdentification() {
     }
 
-    public VehicleIdentification(Vehicle vehicle,String plate, LocalDate purchasedDate, BigDecimal price) {
+    public VehicleIdentification(Vehicle vehicle,String plate, LocalDate purchasedDate, String photoUrl, BigDecimal price) {
         this.plate = plate;
         this.purchasedDate = purchasedDate;
+        this.photoUrl = photoUrl;
         this.vehicle = vehicle;
         this.price = price;
     }
@@ -54,6 +56,14 @@ public class VehicleIdentification {
 
     public void setPurchasedDate(LocalDate purchasedDate) {
         this.purchasedDate = purchasedDate;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 
     public BigDecimal getPrice() {

@@ -17,13 +17,16 @@ import java.util.List;
 public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
+    private final ImageStoreServiceImpl imageStoreService;
     private final ModelRepository modelRepository;
     private final BrandRepository brandRepository;
 
     public VehicleServiceImpl(VehicleRepository vehicleRepository,
+                            ImageStoreServiceImpl imageStoreService,
                             ModelRepository modelRepository,
                             BrandRepository brandRepository) {
         this.vehicleRepository = vehicleRepository;
+        this.imageStoreService = imageStoreService;
         this.modelRepository = modelRepository;
         this.brandRepository = brandRepository;
     }
@@ -64,7 +67,7 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public VehicleDTO createVehicle(VehicleDTO vehicleDto) {
+    public VehicleDTO createVehicle(VehicleDTO vehicleDto, CompletedFileUpload imageFile) {
         
         if (vehicleRepository.findByVin(vehicleDto.getVin()).isPresent()) {
             throw new ConflictException("Vehicle with VIN " + vehicleDto.getVin() + " already exists");
@@ -86,11 +89,16 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.getModel().setBrand(brand);
         vehicle.setRegistrationDate(vehicleDto.getRegistrationDate());
 
+        String photoUrl = imageStoreService.upload(vehicleDto.getVin(), imageFile);
+        if (photoUrl == null) {
+            throw new BadRequestException("Failed to upload vehicle image");
+        }
 
         VehicleIdentification vehicleIdentification = new VehicleIdentification(
                 vehicle,
                 vehicleDto.getPlate(),
                 vehicleDto.getPurchaseDate(),
+                photoUrl,
                 vehicleDto.getCost()
         );
 
@@ -98,15 +106,14 @@ public class VehicleServiceImpl implements VehicleService {
         vehicleRepository.save(vehicle);
         return toDTO(vehicle);
     }
-
-
-
+    
     private VehicleDTO toDTO(Vehicle vehicle) {
         VehicleDTO dto = new VehicleDTO();
         dto.setVin(vehicle.getVin());
         dto.setModel(vehicle.getModel().getName());
         dto.setBrand(vehicle.getModel().getBrand().getName());
         dto.setPlate(vehicle.getIdentification().getPlate());
+        dto.setPhotoUrl(vehicle.getIdentification().getPhotoUrl());
         dto.setPurchaseDate(vehicle.getIdentification().getPurchasedDate());
         dto.setCost(vehicle.getIdentification().getPrice());
         dto.setRegistrationDate(vehicle.getRegistrationDate());
@@ -123,6 +130,7 @@ public class VehicleServiceImpl implements VehicleService {
                 vehicle,
                 vehicleDTO.getPlate(),
                 vehicleDTO.getPurchaseDate(),
+                vehicleDTO.getPhotoUrl(),
                 vehicleDTO.getCost()
         );
         vehicle.setIdentification(identification);

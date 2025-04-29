@@ -14,7 +14,7 @@ public interface VehicleService {
 
     List <VehicleDTO> getAllVehicles();
 
-    VehicleDTO createVehicle(VehicleDTO vehicle);
+    VehicleDTO createVehicle(VehicleDTO vehicle, CompletedFileUpload imageFile);
 
 
 }
