@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: com.chiops.vehicle
+testFramework: junit
+sourceLanguage: java
+buildTool: gradle
+features: [app-name, data, data-jpa, gradle, hibernate-jpa, hibernate-validator, http-client, java, java-application, jdbc-hikari, junit, logback, micronaut-aot, micronaut-build, micronaut-http-validation, mysql, netty-server, object-storage-oracle-cloud, oracle-cloud-sdk, properties, readme, security, security-annotations, security-jwt, serialization-jackson, shade, static-resources, test-resources]
