@@ -68,11 +68,9 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public VehicleDTO createVehicle(VehicleDTO vehicleDto, CompletedFileUpload imageFile) {
-        
         if (vehicleRepository.findByVin(vehicleDto.getVin()).isPresent()) {
             throw new ConflictException("Vehicle with VIN " + vehicleDto.getVin() + " already exists");
         }
-
         Brand brand = brandRepository.findByName(vehicleDto.getBrand());
         if (brand == null) {
             brand = brandRepository.save(new Brand(vehicleDto.getBrand()));
@@ -93,7 +91,6 @@ public class VehicleServiceImpl implements VehicleService {
         if (photoUrl == null) {
             throw new BadRequestException("Failed to upload vehicle image");
         }
-
         VehicleIdentification vehicleIdentification = new VehicleIdentification(
                 vehicle,
                 vehicleDto.getPlate(),

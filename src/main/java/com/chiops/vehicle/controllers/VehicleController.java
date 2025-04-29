@@ -24,9 +24,6 @@ import io.micronaut.security.rules.SecurityRule;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule; 
-
 @ExecuteOn(TaskExecutors.BLOCKING)
 @Controller("/vehicle")
 @Secured(SecurityRule.IS_ANONYMOUS)
@@ -41,23 +38,17 @@ public class VehicleController {
         this.imageStoreService = imageStoreService;
     }
 
-@Post(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA)
-public VehicleDTO createVehicle(@Part("vehicle") String vehicleJson,
-                                @Part("imageFile") CompletedFileUpload imageFile) {
-    try {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        
-        VehicleDTO vehicleDTO = objectMapper.readValue(vehicleJson, VehicleDTO.class);
-        
-        return vehicleService.createVehicle(vehicleDTO, imageFile);
 
-    } catch (com.fasterxml.jackson.databind.JsonMappingException | com.fasterxml.jackson.core.JsonParseException e) {
-        throw new BadRequestException("Invalid vehicle JSON: " + e.getMessage());
-    } catch (Exception e) {
-        throw new InternalServerException("Internal server error while creating vehicle: " + e.getMessage());
+    @Post(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA)
+    public VehicleDTO createVehicle(@Part("vehicle") VehicleDTO vehicle, @Part("imageFile") CompletedFileUpload imageFile) {
+        try {
+            return vehicleService.createVehicle(vehicle, imageFile);
+        } catch (BadRequestException e) {
+            throw new BadRequestException("Error de solicitud al crear el vehículo: " + e.getMessage());
+        } catch (InternalServerException e) {
+            throw new InternalServerException("Error interno al crear el vehículo: " + e.getMessage());
+        }
     }
-}
 
     @Put(value = "/update", consumes = MediaType.APPLICATION_JSON)
     public VehicleDTO updateVehicle(@Body VehicleDTO vehicle) {
