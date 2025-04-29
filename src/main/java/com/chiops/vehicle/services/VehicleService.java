@@ -16,5 +16,7 @@ public interface VehicleService {
 
     VehicleDTO createVehicle(VehicleDTO vehicle, CompletedFileUpload imageFile);
 
+    VehicleDTO updateVehicle(VehicleDTO vehicle);
+
 
 }

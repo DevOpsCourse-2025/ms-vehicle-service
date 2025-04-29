@@ -106,7 +106,32 @@ public class VehicleServiceImpl implements VehicleService {
         vehicleRepository.save(vehicle);
         return toDTO(vehicle);
     }
-    
+
+    @Override
+    public VehicleDTO updateVehicle(VehicleDTO vehicleDto) {
+        Vehicle vehicle = vehicleRepository.findByVin(vehicleDto.getVin())
+                .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vehicleDto.getVin() + " not found"));
+
+        Brand brand = brandRepository.findByName(vehicleDto.getBrand());
+        if (brand == null) {
+            brand = brandRepository.save(new Brand(vehicleDto.getBrand()));
+        }
+
+        Model model = modelRepository.findByName(vehicleDto.getModel());
+        if (model == null) {
+            model = modelRepository.save(new Model(vehicleDto.getModel(), brand));
+        }
+        
+        vehicle.setModel(model);
+
+        vehicle.setRegistrationDate(vehicleDto.getRegistrationDate());
+        vehicle.getIdentification().setPlate(vehicleDto.getPlate());
+        vehicle.getIdentification().setPurchasedDate(vehicleDto.getPurchaseDate());
+        vehicle.getIdentification().setPrice(vehicleDto.getCost());
+
+        return toDTO(vehicleRepository.update(vehicle));
+    }
+
     private VehicleDTO toDTO(Vehicle vehicle) {
         VehicleDTO dto = new VehicleDTO();
         dto.setVin(vehicle.getVin());
