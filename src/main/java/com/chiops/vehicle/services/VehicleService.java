@@ -18,5 +18,7 @@ public interface VehicleService {
 
     VehicleDTO updateVehicle(VehicleDTO vehicle);
 
+    void deleteVehicle(String vin);
+
 
 }

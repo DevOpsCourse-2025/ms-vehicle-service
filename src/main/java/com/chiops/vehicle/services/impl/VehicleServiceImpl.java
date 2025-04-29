@@ -132,6 +132,18 @@ public class VehicleServiceImpl implements VehicleService {
         return toDTO(vehicleRepository.update(vehicle));
     }
 
+    @Override
+    public void deleteVehicle(String vin) {
+        Vehicle vehicle = vehicleRepository.findByVin(vin)
+                .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vin + " not found"));
+        
+        if (vehicle.getVehicleAssignment() != null && "assigned".equals(vehicle.getVehicleAssignment().getStatus())) {
+            throw new ConflictException("Cannot delete vehicle with VIN " + vin + " because it is currently assigned");
+        }
+        
+        vehicleRepository.delete(vehicle);
+    }
+
     private VehicleDTO toDTO(Vehicle vehicle) {
         VehicleDTO dto = new VehicleDTO();
         dto.setVin(vehicle.getVin());
