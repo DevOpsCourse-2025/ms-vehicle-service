@@ -66,31 +66,35 @@ public class VehicleServiceImpl implements VehicleService {
                 .toList();
     }
 
-    @Override
-    public VehicleDTO createVehicle(VehicleDTO vehicleDto, CompletedFileUpload imageFile) {
+    public VehicleDTO createVehicle(VehicleDTO vehicleDto, byte[] imageBytes) {
         if (vehicleRepository.findByVin(vehicleDto.getVin()).isPresent()) {
             throw new ConflictException("Vehicle with VIN " + vehicleDto.getVin() + " already exists");
         }
+    
         Brand brand = brandRepository.findByName(vehicleDto.getBrand());
         if (brand == null) {
             brand = brandRepository.save(new Brand(vehicleDto.getBrand()));
         }
-
+    
         Model model = modelRepository.findByName(vehicleDto.getModel());
         if (model == null) {
             model = modelRepository.save(new Model(vehicleDto.getModel(), brand));
         }
-        
+    
         Vehicle vehicle = toEntity(vehicleDto);
         vehicle.setVin(vehicleDto.getVin());
         vehicle.setModel(model);
         vehicle.getModel().setBrand(brand);
         vehicle.setRegistrationDate(vehicleDto.getRegistrationDate());
-
-        String photoUrl = imageStoreService.upload(vehicleDto.getVin(), imageFile);
+        String photoUrl = imageStoreService.upload(
+            vehicleDto.getVin(),
+            imageBytes,
+            vehicleDto.getVin() + ".jpg"
+        );
         if (photoUrl == null) {
             throw new BadRequestException("Failed to upload vehicle image");
         }
+    
         VehicleIdentification vehicleIdentification = new VehicleIdentification(
                 vehicle,
                 vehicleDto.getPlate(),
@@ -98,7 +102,7 @@ public class VehicleServiceImpl implements VehicleService {
                 photoUrl,
                 vehicleDto.getCost()
         );
-
+    
         vehicle.setIdentification(vehicleIdentification);
         vehicleRepository.save(vehicle);
         return toDTO(vehicle);
