@@ -4,7 +4,6 @@ import com.chiops.vehicle.libs.exceptions.exception.*;
 import com.chiops.vehicle.services.ImageStoreService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
-import io.micronaut.http.multipart.CompletedFileUpload;
 import io.micronaut.http.server.types.files.StreamedFile;
 import io.micronaut.objectstorage.ObjectStorageEntry;
 import io.micronaut.objectstorage.ObjectStorageOperations;
@@ -26,22 +25,22 @@ public class ImageStoreServiceImpl implements ImageStoreService {
     }
 
     @Override
-    public String upload(String vehicleId, CompletedFileUpload imageFile) {
-        String fileName = imageFile.getFilename();
-
-        String contentType = getContentType(fileName);
+    public String upload(String vehicleId, byte[] imageBytes, String originalFilename) {
+        String contentType = getContentType(originalFilename);
 
         if (MediaType.APPLICATION_PDF.equals(contentType) || MediaType.APPLICATION_OCTET_STREAM.equals(contentType)) {
-            throw new UnsupportedMediaTypeException("Solo se permiten imágenes JPEG, PNG, GIF, BMP o WebP. No admite :" + contentType);
+            throw new UnsupportedMediaTypeException("Solo se permiten imágenes JPEG, PNG, GIF, BMP o WebP. No admite: " + contentType);
         }
-        Optional<String> extensionOpt = getFileExtension(fileName);
-        
-        String extension = extensionOpt.get();
+
+        Optional<String> extensionOpt = getFileExtension(originalFilename);
+        String extension = extensionOpt.orElseThrow(() -> new BadRequestException("No se pudo determinar la extensión del archivo"));
+
         String uniqueKey = vehicleId + "_" + UUID.randomUUID().toString() + extension;
-        
+
         try {
-            UploadRequest request = UploadRequest.fromCompletedFileUpload(imageFile, uniqueKey);
-            UploadResponse<?> response = this.objectStorage.upload(request);
+            UploadRequest request = UploadRequest.fromBytes(imageBytes, uniqueKey);
+            request.setContentType(contentType);
+            UploadResponse<?> response = objectStorage.upload(request);
             String baseUrl = "http://localhost:8080";
             return baseUrl + "/vehicle/view/" + uniqueKey;
 

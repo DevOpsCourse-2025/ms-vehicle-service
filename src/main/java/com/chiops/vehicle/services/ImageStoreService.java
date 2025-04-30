@@ -7,8 +7,8 @@ import jakarta.inject.Singleton;
 
 
 public interface ImageStoreService {
-
-    String upload(String vehicleId, CompletedFileUpload imageFile);
+    
+    String upload(String vehicleId, byte[] imageBytes, String originalFilename);
 
     HttpResponse<?> view(String filename);
 }
