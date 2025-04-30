@@ -3,6 +3,7 @@ package com.chiops.vehicle.services;
 import com.chiops.vehicle.libs.dtos.VehicleAssignmentDTO;
 import com.chiops.vehicle.libs.dtos.VehicleDTO;
 import io.micronaut.http.multipart.CompletedFileUpload;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public interface VehicleService {
 
     VehicleDTO updateVehicle(VehicleDTO vehicle);
 
-    void deleteVehicle(String vin);
+    VehicleDTO deleteVehicle(String vin);
 
 
 }

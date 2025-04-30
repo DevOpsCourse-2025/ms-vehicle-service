@@ -27,10 +27,10 @@ public class VehicleDTO {
     @NotNull
     private LocalDate purchaseDate;
 
-    @NotBlank
+    @NotNull
     private LocalDate registrationDate;
 
-    @NotBlank
+    @NotNull
     private BigDecimal cost;
 
     private String photoUrl;
