@@ -97,14 +97,4 @@ public class VehicleAssigmentController {
             throw new InternalServerException("Internal server error while trying to change driver: " + e.getMessage());
         }
     }
-
-    @Error(status = HttpStatus.NOT_FOUND, global = true)
-    public HttpResponse<ErrorResponse> handleNotFound(HttpRequest<?> request) {
-        throw new NotFoundException("Endpoint " + request.getPath() + " not found");
-    }
-
-    @Error(status = HttpStatus.METHOD_NOT_ALLOWED, global = true)
-    public HttpResponse<ErrorResponse> handleMethodNotAllowed(HttpRequest<?> request) {
-        throw new MethodNotAllowedException("Method " + request.getMethod() + " is not allowed for " + request.getPath());
-    }
 }

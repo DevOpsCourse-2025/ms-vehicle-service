@@ -29,6 +29,10 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
 
     @Override
     public List<VehicleAssignmentDTO> findByStatus(String status) {
+        if (status == null || status.isBlank()) {
+            throw new BadRequestException("status field is obligatory");
+        }
+
         List<VehicleAssignment> vehicleAssignments = vehicleAssignmentRepository.findByStatus(status);
         if (vehicleAssignments.isEmpty()) {
             throw new NotFoundException("No vehicle assignments found with status: " + status);
@@ -41,9 +45,7 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
     @Override
     public List<VehicleAssignmentDTO> assignmentsHistory() {
         List<VehicleAssignment> vehicleAssignments = vehicleAssignmentRepository.findAll();
-        if (vehicleAssignments.isEmpty()) {
-            throw new NotFoundException("No vehicle assignments found in the system");
-        }
+
         return vehicleAssignments.stream()
                 .map(this::vehicleAssignmentToDTO)
                 .toList();
@@ -51,6 +53,10 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
 
     @Override
     public VehicleAssignmentDTO findByVin(String vin) {
+        if (vin == null || vin.isBlank()) {
+            throw new BadRequestException("vin field is obligatory");
+        }
+
         Vehicle vehicle = vehicleRepository.findByVin(vin)
                 .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vin + " not found"));
     
@@ -63,10 +69,18 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
     
     @Override
     public VehicleAssignmentDTO assignVehicleToDriver(VehicleAssignmentDTO vehicleAssignmentDto) {
+        if(vehicleAssignmentDto.getVin() == null || vehicleAssignmentDto.getVin().isEmpty()){
+            throw new BadRequestException("vin field is obligatory");
+        }
+        
+        if(vehicleAssignmentDto.getDriverCurp() == null || vehicleAssignmentDto.getDriverCurp().isEmpty()){
+            throw new BadRequestException("CURP field is obligatory");
+        }
+
         Vehicle vehicle = vehicleRepository.findByVin(vehicleAssignmentDto.getVin())
         .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vehicleAssignmentDto.getVin() + " not found"));
 
-        
+
         if (vehicle.getVehicleAssignment() != null && "assigned".equals(vehicle.getVehicleAssignment().getStatus())) {
             throw new ConflictException("Vehicle with VIN " + vehicleAssignmentDto.getVin() + " is already assigned to a driver");
         }
@@ -96,6 +110,14 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
 
     @Override
     public VehicleAssignmentDTO releaseVehicleFromDriver(VehicleAssignmentDTO vehicleAssignmentDto) {
+        if(vehicleAssignmentDto.getVin() == null || vehicleAssignmentDto.getVin().isEmpty()){
+            throw new BadRequestException("vin field is obligatory");
+        }
+        
+        if(vehicleAssignmentDto.getDriverCurp() == null || vehicleAssignmentDto.getDriverCurp().isEmpty()){
+            throw new BadRequestException("CURP field is obligatory");
+        }
+
         Vehicle vehicle = vehicleRepository.findByVin(vehicleAssignmentDto.getVin())
                 .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vehicleAssignmentDto.getVin() + " not found"));
                 
@@ -124,6 +146,18 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
 
     @Override
     public VehicleAssignmentDTO changeDriver(VehicleAssignmentDTO vehicleAssignmentDto) {
+        if(vehicleAssignmentDto.getVin() == null || vehicleAssignmentDto.getVin().isEmpty()){
+            throw new BadRequestException("vin field is obligatory");
+        }
+        
+        if(vehicleAssignmentDto.getDriverCurp() == null || vehicleAssignmentDto.getDriverCurp().isEmpty()){
+            throw new BadRequestException("CURP field is obligatory");
+        }
+
+        if(vehicleAssignmentDto.getChangedDriverCurp() == null || vehicleAssignmentDto.getChangedDriverCurp().isEmpty()){
+            throw new BadRequestException("CURP field is obligatory");
+        }
+
         Vehicle vehicle = vehicleRepository.findByVin(vehicleAssignmentDto.getVin())
                 .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vehicleAssignmentDto.getVin() + " not found"));
 
@@ -132,16 +166,16 @@ public class VehicleAssignmentServiceImpl implements VehicleAssignmentService {
         }
 
         if (driverClient.getDriverByCurp(vehicleAssignmentDto.getDriverCurp()).isEmpty()) {
-            throw new NotFoundException("Driver with CURP " + vehicleAssignmentDto.getDriverCurp() + " not found");
+            throw new BadRequestException("Driver with CURP " + vehicleAssignmentDto.getDriverCurp() + "is incorrect");
         }
         
         if (driverClient.getDriverByCurp(vehicleAssignmentDto.getChangedDriverCurp()).isEmpty()) {
-            throw new NotFoundException("Changed driver with CURP " + vehicleAssignmentDto.getChangedDriverCurp() + " not found");
+            throw new BadRequestException("Changed driver with CURP " + vehicleAssignmentDto.getChangedDriverCurp() + " is incorrect");
         }
 
         VehicleAssignment oldVehicleAssignment = vehicleAssignmentRepository
                 .findByDriverCurpAndStatus(vehicleAssignmentDto.getDriverCurp(), "assigned")
-                .orElseThrow(() -> new NotFoundException("Driver with CURP " + vehicleAssignmentDto.getDriverCurp() + " is not assigned to any vehicle"));
+                .orElseThrow(() -> new ConflictException("Driver with CURP " + vehicleAssignmentDto.getDriverCurp() + " is not assigned to any vehicle"));
 
         if (oldVehicleAssignment.getDriverCurp().equals(vehicleAssignmentDto.getChangedDriverCurp())
         || vehicleAssignmentRepository.findByDriverCurpAndStatus(vehicleAssignmentDto.getChangedDriverCurp(), "assigned").isPresent()) {

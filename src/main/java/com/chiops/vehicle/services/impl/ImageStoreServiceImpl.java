@@ -52,6 +52,9 @@ public class ImageStoreServiceImpl implements ImageStoreService {
     @Override
     public HttpResponse<?> view(String filename) {
         try {
+            if (filename == null || filename.isBlank()) {
+                throw new BadRequestException("filename field is obligatory");
+            }
             Optional<ObjectStorageEntry> entryOptional = objectStorage.retrieve(filename);
 
             if (entryOptional.isEmpty()) {

@@ -9,10 +9,11 @@ import com.chiops.vehicle.libs.dtos.VehicleDTO;
 import com.chiops.vehicle.repositories.*;
 import com.chiops.vehicle.services.VehicleService;
 import io.micronaut.http.multipart.CompletedFileUpload;
+import io.micronaut.validation.Validated;
 import jakarta.inject.Singleton;
-
+import jakarta.validation.Valid;
+import java.util.Optional;
 import java.util.List;
-
 @Singleton
 public class VehicleServiceImpl implements VehicleService {
 
@@ -40,11 +41,13 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public List<VehicleDTO> getVehiclesByModelName(String model) {
-        Model modelEntity = modelRepository.findByName(model);
-        if (modelEntity == null) {
-            throw new NotFoundException("Model " + model + " not found");
+        if (model== null || model.isBlank()) {
+            throw new BadRequestException("Model as parameter is obligatory");
         }
-        
+        Model modelEntity = modelRepository.findByName(model)
+            .orElseThrow(() ->
+                new NotFoundException("Model with name " + model + " not found")
+            );
         List<Vehicle> vehicles = vehicleRepository.findByModel(modelEntity);
         if (vehicles.isEmpty()) {
             throw new NotFoundException("No vehicles found for model " + model);
@@ -58,9 +61,6 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public List<VehicleDTO> getAllVehicles() {
         List<Vehicle> vehicles = vehicleRepository.findAll();
-        if (vehicles.isEmpty()) {
-            throw new NotFoundException("No vehicles found in the system");
-        }
         return vehicles.stream()
                 .map(this::toDTO)
                 .toList();
@@ -71,16 +71,18 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ConflictException("Vehicle with VIN " + vehicleDto.getVin() + " already exists");
         }
     
-        Brand brand = brandRepository.findByName(vehicleDto.getBrand());
-        if (brand == null) {
-            brand = brandRepository.save(new Brand(vehicleDto.getBrand()));
-        }
+        Brand brand = brandRepository
+        .findByName(vehicleDto.getBrand())
+        .orElseGet(() ->
+            brandRepository.save(new Brand(vehicleDto.getBrand()))
+        );
     
-        Model model = modelRepository.findByName(vehicleDto.getModel());
-        if (model == null) {
-            model = modelRepository.save(new Model(vehicleDto.getModel(), brand));
-        }
-    
+        Model model = modelRepository
+            .findByName(vehicleDto.getModel())
+            .orElseGet(() -> {
+                Model m = new Model(vehicleDto.getModel(), brand);
+                return modelRepository.save(m);
+        });
         Vehicle vehicle = toEntity(vehicleDto);
         vehicle.setVin(vehicleDto.getVin());
         vehicle.setModel(model);
@@ -111,18 +113,21 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public VehicleDTO updateVehicle(VehicleDTO vehicleDto) {
         Vehicle vehicle = vehicleRepository.findByVin(vehicleDto.getVin())
-                .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vehicleDto.getVin() + " not found"));
-
-        Brand brand = brandRepository.findByName(vehicleDto.getBrand());
-        if (brand == null) {
-            brand = brandRepository.save(new Brand(vehicleDto.getBrand()));
-        }
-
-        Model model = modelRepository.findByName(vehicleDto.getModel());
-        if (model == null) {
-            model = modelRepository.save(new Model(vehicleDto.getModel(), brand));
-        }
+                .orElseThrow(() -> new BadRequestException("Vin cannot be changed, be sure to write de Vin correctly\""));
         
+        if (!vehicle.getVin().equals(vehicleDto.getVin())) {
+            throw new BadRequestException("Vin cannot be changed, be sure to write the Vin correctly of the vehicle you want to update");
+        }
+
+        Brand brand = brandRepository.findByName(vehicleDto.getBrand())
+            .orElseGet(() -> brandRepository.save(new Brand(vehicleDto.getBrand())));
+
+        Model model = modelRepository.findByName(vehicleDto.getModel())
+            .orElseGet(() -> {
+                Model m = new Model(vehicleDto.getModel(), brand);
+                return modelRepository.save(m);
+            });
+
         vehicle.setModel(model);
 
         vehicle.setRegistrationDate(vehicleDto.getRegistrationDate());
@@ -134,15 +139,17 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public void deleteVehicle(String vin) {
-        Vehicle vehicle = vehicleRepository.findByVin(vin)
-                .orElseThrow(() -> new NotFoundException("Vehicle with VIN " + vin + " not found"));
-        
+    public VehicleDTO deleteVehicle(String vin) {
+        Optional <Vehicle> vehicleOpt = vehicleRepository.findByVin(vin);
+        if (vehicleOpt.isEmpty()) {
+            throw new BadRequestException("The VIN is incorrect.");
+        }
+        Vehicle vehicle = vehicleOpt.get();
         if (vehicle.getVehicleAssignment() != null && "assigned".equals(vehicle.getVehicleAssignment().getStatus())) {
             throw new ConflictException("Cannot delete vehicle with VIN " + vin + " because it is currently assigned");
         }
-        
         vehicleRepository.delete(vehicle);
+        return toDTO(vehicle);
     }
 
     private VehicleDTO toDTO(Vehicle vehicle) {
